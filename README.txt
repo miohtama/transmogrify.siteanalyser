@@ -19,3 +19,6 @@ transmogrify.siteanalyser.attach
 
 transmogrify.siteanalyser.title
   Determine the title of an item from the link text used.
+
+transmogrify.siteanalyser.linkmanipulator
+  Perform simple replacement operators on <a href=""> to strip link extensions etc.
