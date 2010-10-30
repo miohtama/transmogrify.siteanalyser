@@ -6,6 +6,7 @@
 
 import urllib
 import lxml
+import logging
 
 from zope.interface import classProvides, implements
 
@@ -13,6 +14,8 @@ from collective.transmogrifier.interfaces import ISectionBlueprint
 from collective.transmogrifier.interfaces import ISection
 from collective.transmogrifier.utils import Matcher
 from collective.transmogrifier.utils import defaultMatcher
+
+logger = logging.getLogger("linkmanipulator")
 
 class BadOptionException(RuntimeError):
     """ This is raised if the section blueprint is improperly configured """
@@ -30,6 +33,7 @@ class LinkManipulator(object):
         * relative-only: Apply blueprint for relative links only
     
     """
+    classProvides(ISectionBlueprint)
     implements(ISection)
 
     
@@ -60,8 +64,8 @@ class LinkManipulator(object):
         """
         
         # Remote site / object URL containing HTTP Basic Auth username and password 
-        self.extensions = options.get("extensions", None) 
-        self.fields = options.get("fields", None) 
+        self.extensions = options.get("extensions", "").split(" ") 
+        self.fields = options.get("fields", "").split(" ")
         self.relative_only = options.get("relative-only", "false")
     
         self.relative_only = self.relative_only == "true"
@@ -85,15 +89,19 @@ class LinkManipulator(object):
         """
         @param a: lxml node
         """
+        
+
         href = a.attrib["href"]
         
         if href.startswith("http"):
             # match http + https
             if self.relative_only:
                 return
-    
+        
         for extension in self.extensions:
+            # The link might 
             if href.endswith(extension):
+                logger.debug("Fixing link " + href)
                 href = href[0:-len(extension)]
                 
         a.attrib["href"] = href
@@ -114,20 +122,28 @@ class LinkManipulator(object):
             if "href" in a.attrib:
                 self.fixLink(a)
 
+        return lxml.html.tostring(dom)
+    
         
     def __iter__(self):
         """
-        Run tranmogrify pipeline 
+        Run transmogrify pipeline 
         """
         self.checkOptions()
                             
         for item in self.previous:
             
             keys = item.keys()
+            
+            if "_bad_url" in keys:
+                # This item was not propely crawled
+                continue
+        
+    
             for field in self.fields:
                 if field in keys:
                     # Extract iterated item field
                     payload = item[field]
-                    self.walk(payload)
+                    item[field] = self.walk(payload)
                     
             yield item

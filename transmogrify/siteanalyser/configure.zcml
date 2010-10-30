@@ -20,4 +20,9 @@
    <utility component=".backlinkstitle.BacklinksTitle"
              name="transmogrify.siteanalyser.title" />
 
+   <utility component=".linkmanipulator.LinkManipulator"
+             name="transmogrifier.siteanalyser.linkmanipulator" />
+
+
+
 </configure>
